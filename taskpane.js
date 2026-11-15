@@ -1,4 +1,3 @@
-
 /* Gerador Petrobras - Outlook Add-in
    Primeiro protótipo: preenchimento de e-mail de teste.
 */
