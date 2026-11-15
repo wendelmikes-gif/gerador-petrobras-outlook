@@ -42,6 +42,7 @@
         button {
             width: 100%;
             padding: 13px;
+            margin-bottom: 10px;
             border: none;
             border-radius: 5px;
             background: #4D611A;
@@ -53,6 +54,11 @@
 
         button:hover {
             background: #627b21;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         #status {
@@ -77,12 +83,15 @@
         </div>
 
         <p>
-            Utilize o botão abaixo para testar o preenchimento
-            automático de uma mensagem.
+            Utilize os botões abaixo para testar a integração.
         </p>
 
         <button id="btnPreencher" disabled>
             Preencher e-mail de teste
+        </button>
+
+        <button id="btnTestarClipboard" disabled>
+            Testar leitura do clipboard
         </button>
 
         <div id="status">
