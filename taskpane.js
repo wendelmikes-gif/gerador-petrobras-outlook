@@ -1,6 +1,8 @@
-
-/* Gerador Petrobras - Outlook Add-in
-   Teste de preenchimento e leitura do clipboard.
+/* 
+   GERADOR PETROBRAS
+   Suplemento de integração com Outlook Web.
+   Mantém o teste de preenchimento e adiciona
+   a verificação de leitura do clipboard.
 */
 
 function atualizarStatus(mensagem) {
@@ -14,7 +16,10 @@ function atualizarStatus(mensagem) {
 function executarAsync(operacao) {
     return new Promise((resolve, reject) => {
         operacao((resultado) => {
-            if (resultado.status === Office.AsyncResultStatus.Succeeded) {
+            if (
+                resultado.status ===
+                Office.AsyncResultStatus.Succeeded
+            ) {
                 resolve(resultado);
             } else {
                 reject(
@@ -28,11 +33,15 @@ function executarAsync(operacao) {
     });
 }
 
+/* TESTE ORIGINAL DE PREENCHIMENTO */
+
 async function preencherEmailTeste() {
     const item = Office.context.mailbox.item;
 
     if (!item) {
-        atualizarStatus("Não foi possível acessar a mensagem atual.");
+        atualizarStatus(
+            "Não foi possível acessar a mensagem atual."
+        );
         return;
     }
 
@@ -49,26 +58,31 @@ async function preencherEmailTeste() {
                         OCORRÊNCIA - TESTE
                     </td>
                 </tr>
+
                 <tr>
                     <td style="width:25%;padding:10px;
                     border:1px solid #777;font-weight:bold;">
                         IDENTIFICAÇÃO
                     </td>
+
                     <td style="padding:10px;border:1px solid #777;">
                         TESTE 000001
                     </td>
                 </tr>
+
                 <tr>
                     <td style="padding:10px;border:1px solid #777;
                     font-weight:bold;">
                         OBSERVAÇÃO
                     </td>
+
                     <td style="padding:10px;border:1px solid #777;">
                         Este é um teste de integração do
                         Gerador Petrobras com o Outlook Web.
                     </td>
                 </tr>
             </table>
+
             <p style="color:#c00000;font-style:italic;
             text-align:center;">
                 MENSAGEM DE TESTE — NÃO ENVIAR
@@ -102,7 +116,10 @@ async function preencherEmailTeste() {
         atualizarStatus("Preenchendo assunto e corpo...");
 
         await executarAsync((callback) =>
-            item.subject.setAsync(assunto, callback)
+            item.subject.setAsync(
+                assunto,
+                callback
+            )
         );
 
         await executarAsync((callback) =>
@@ -124,20 +141,26 @@ async function preencherEmailTeste() {
     }
 }
 
+/* TESTE DE LEITURA DO CLIPBOARD */
+
 async function testarLeituraClipboard() {
-    const marcadorEsperado = "GERADOR_PETROBRAS_TESTE_001";
+    const marcadorEsperado =
+        "GERADOR_PETROBRAS_TESTE_001";
 
     try {
-        atualizarStatus("Verificando acesso ao clipboard...");
+        atualizarStatus("Solicitando leitura do clipboard...");
 
-        if (!navigator.clipboard ||
-            typeof navigator.clipboard.readText !== "function") {
+        if (
+            !navigator.clipboard ||
+            typeof navigator.clipboard.readText !== "function"
+        ) {
             throw new Error(
-                "A API de leitura do clipboard não está disponível."
+                "A leitura do clipboard não está disponível neste navegador."
             );
         }
 
-        const conteudo = await navigator.clipboard.readText();
+        const conteudo =
+            await navigator.clipboard.readText();
 
         if (conteudo.trim() === marcadorEsperado) {
             atualizarStatus(
@@ -145,31 +168,59 @@ async function testarLeituraClipboard() {
             );
         } else {
             atualizarStatus(
-                "Leitura realizada, mas o conteúdo não corresponde " +
-                "ao marcador de teste. Copie o texto indicado e tente novamente."
+                "Clipboard acessado, mas o conteúdo não corresponde " +
+                "ao marcador esperado. Confira o texto copiado."
             );
         }
 
     } catch (erro) {
         atualizarStatus(
-            "Não foi possível ler o clipboard: " + erro.message
+            "Falha na leitura do clipboard: " + erro.message
         );
     }
 }
 
-Office.onReady(() => {
-    const botaoPreencher = document.getElementById("btnPreencher");
-    const botaoClipboard = document.getElementById("btnTestarClipboard");
+/* INICIALIZAÇÃO DO OUTLOOK */
+
+Office.onReady((informacoes) => {
+
+    const botaoPreencher =
+        document.getElementById("btnPreencher");
+
+    const botaoClipboard =
+        document.getElementById("btnTestarClipboard");
 
     if (botaoPreencher) {
-        botaoPreencher.disabled = false;
-        botaoPreencher.addEventListener("click", preencherEmailTeste);
+        botaoPreencher.addEventListener(
+            "click",
+            preencherEmailTeste
+        );
     }
 
     if (botaoClipboard) {
-        botaoClipboard.disabled = false;
-        botaoClipboard.addEventListener("click", testarLeituraClipboard);
+        botaoClipboard.addEventListener(
+            "click",
+            testarLeituraClipboard
+        );
     }
 
-    atualizarStatus("Complemento conectado ao Outlook.");
+    if (informacoes.host === Office.HostType.Outlook) {
+
+        if (botaoPreencher) {
+            botaoPreencher.disabled = false;
+        }
+
+        if (botaoClipboard) {
+            botaoClipboard.disabled = false;
+        }
+
+        atualizarStatus(
+            "Complemento conectado ao Outlook. Botões habilitados."
+        );
+
+    } else {
+        atualizarStatus(
+            "O suplemento carregou, mas o Outlook não foi identificado."
+        );
+    }
 });
