@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerador Petrobras</title>
 
-    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-    <script src="taskpane.js"></script>
-
     <style>
         body {
             margin: 0;
@@ -52,7 +49,7 @@
             cursor: pointer;
         }
 
-        button:hover {
+        button:hover:not(:disabled) {
             background: #627b21;
         }
 
@@ -75,8 +72,10 @@
 
 <body>
     <div class="container">
+
         <div class="header">
             <h2>GERADOR PETROBRAS</h2>
+
             <div class="subtitle">
                 Integração com Outlook Web
             </div>
@@ -95,8 +94,13 @@
         </button>
 
         <div id="status">
-            Aguardando inicialização do Outlook...
+            Carregando suplemento...
         </div>
+
     </div>
+
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <script src="./taskpane.js?v=3"></script>
+
 </body>
 </html>
