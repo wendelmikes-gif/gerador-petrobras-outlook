@@ -56,7 +56,6 @@
         <Hosts>
             <Host xsi:type="MailHost">
                 <DesktopFormFactor>
-
                     <ExtensionPoint xsi:type="MessageComposeCommandSurface">
                         <OfficeTab id="TabDefault">
                             <Group id="GeradorPetrobrasGroup">
@@ -81,7 +80,6 @@
                             </Group>
                         </OfficeTab>
                     </ExtensionPoint>
-
                 </DesktopFormFactor>
             </Host>
         </Hosts>
