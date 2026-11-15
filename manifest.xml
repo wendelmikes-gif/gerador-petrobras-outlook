@@ -34,7 +34,6 @@
         <Form xsi:type="ItemEdit">
             <DesktopSettings>
                 <SourceLocation DefaultValue="https://wendelmikes-gif.github.io/gerador-petrobras-outlook/taskpane.html"/>
-                <RequestedHeight>350</RequestedHeight>
             </DesktopSettings>
         </Form>
     </FormSettings>
