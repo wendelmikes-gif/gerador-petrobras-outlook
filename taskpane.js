@@ -1,5 +1,6 @@
+
 /* Gerador Petrobras - Outlook Add-in
-   Primeiro protótipo: preenchimento de e-mail de teste.
+   Teste de preenchimento e leitura do clipboard.
 */
 
 function atualizarStatus(mensagem) {
@@ -115,8 +116,7 @@ async function preencherEmailTeste() {
         );
 
         atualizarStatus(
-            "Teste concluído! Confira os destinatários, " +
-            "o assunto e a formatação no Outlook. Não envie."
+            "Teste concluído! Confira os campos no Outlook. Não envie."
         );
 
     } catch (erro) {
@@ -124,15 +124,52 @@ async function preencherEmailTeste() {
     }
 }
 
-Office.onReady(() => {
-    const botao = document.getElementById("btnPreencher");
+async function testarLeituraClipboard() {
+    const marcadorEsperado = "GERADOR_PETROBRAS_TESTE_001";
 
-    if (!botao) {
-        return;
+    try {
+        atualizarStatus("Verificando acesso ao clipboard...");
+
+        if (!navigator.clipboard ||
+            typeof navigator.clipboard.readText !== "function") {
+            throw new Error(
+                "A API de leitura do clipboard não está disponível."
+            );
+        }
+
+        const conteudo = await navigator.clipboard.readText();
+
+        if (conteudo.trim() === marcadorEsperado) {
+            atualizarStatus(
+                "SUCESSO! O suplemento conseguiu ler o clipboard."
+            );
+        } else {
+            atualizarStatus(
+                "Leitura realizada, mas o conteúdo não corresponde " +
+                "ao marcador de teste. Copie o texto indicado e tente novamente."
+            );
+        }
+
+    } catch (erro) {
+        atualizarStatus(
+            "Não foi possível ler o clipboard: " + erro.message
+        );
+    }
+}
+
+Office.onReady(() => {
+    const botaoPreencher = document.getElementById("btnPreencher");
+    const botaoClipboard = document.getElementById("btnTestarClipboard");
+
+    if (botaoPreencher) {
+        botaoPreencher.disabled = false;
+        botaoPreencher.addEventListener("click", preencherEmailTeste);
     }
 
-    botao.disabled = false;
-    botao.addEventListener("click", preencherEmailTeste);
+    if (botaoClipboard) {
+        botaoClipboard.disabled = false;
+        botaoClipboard.addEventListener("click", testarLeituraClipboard);
+    }
 
     atualizarStatus("Complemento conectado ao Outlook.");
 });
