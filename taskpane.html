@@ -1,0 +1,94 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador Petrobras</title>
+
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <script src="taskpane.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 24px;
+            font-family: Arial, sans-serif;
+            background: #171717;
+            color: #ffffff;
+        }
+
+        .container {
+            max-width: 420px;
+            margin: auto;
+        }
+
+        .header {
+            border-bottom: 3px solid #4D611A;
+            padding-bottom: 14px;
+            margin-bottom: 22px;
+        }
+
+        h2 {
+            margin: 0;
+            color: #ffffff;
+        }
+
+        .subtitle {
+            color: #bdbdbd;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+
+        button {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 5px;
+            background: #4D611A;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #627b21;
+        }
+
+        #status {
+            margin-top: 18px;
+            padding: 12px;
+            border-radius: 5px;
+            background: #252525;
+            color: #d5d5d5;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>GERADOR PETROBRAS</h2>
+            <div class="subtitle">
+                Integração com Outlook Web
+            </div>
+        </div>
+
+        <p>
+            Utilize o botão abaixo para testar o preenchimento
+            automático de uma mensagem.
+        </p>
+
+        <button id="btnPreencher" disabled>
+            Preencher e-mail de teste
+        </button>
+
+        <div id="status">
+            Aguardando inicialização do Outlook...
+        </div>
+    </div>
+</body>
+</html>
