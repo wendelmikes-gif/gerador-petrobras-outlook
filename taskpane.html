@@ -1,402 +1,110 @@
-/* 
-   GERADOR PETROBRAS
-   Suplemento de integração com Outlook Web.
-   Mantém o teste de preenchimento e adiciona
-   a verificação de leitura do clipboard.
-*/
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador Petrobras</title>
 
-function atualizarStatus(mensagem) {
-    const status = document.getElementById("status");
-
-    if (status) {
-        status.textContent = mensagem;
-    }
-}
-
-function executarAsync(operacao) {
-    return new Promise((resolve, reject) => {
-        operacao((resultado) => {
-            if (
-                resultado.status ===
-                Office.AsyncResultStatus.Succeeded
-            ) {
-                resolve(resultado);
-            } else {
-                reject(
-                    new Error(
-                        resultado.error?.message ||
-                        "Não foi possível preencher o campo."
-                    )
-                );
-            }
-        });
-    });
-}
-
-
-/* RECUPERAÇÃO DE PACOTE TEMPORÁRIO DO GERADOR */
-
-const WORKER_BASE_URL =
-    "https://gerador-petrobras-bridge.wendelmikes.workers.dev";
-
-const MARCADOR_PACOTE_REGEX =
-    /\[\[GERADOR_PETROBRAS_PACKAGE:([a-f0-9]{64})\]\]/i;
-
-function obterCampoAsync(operacao) {
-    return new Promise((resolve, reject) => {
-        operacao((resultado) => {
-            if (
-                resultado.status ===
-                Office.AsyncResultStatus.Succeeded
-            ) {
-                resolve(resultado.value);
-            } else {
-                reject(new Error(
-                    resultado.error?.message ||
-                    "Não foi possível ler o conteúdo da mensagem."
-                ));
-            }
-        });
-    });
-}
-
-function converterListaDestinatarios(valor) {
-    if (!valor || !String(valor).trim()) {
-        return [];
-    }
-
-    return String(valor)
-        .split(/[;,]+/)
-        .map(item => item.trim())
-        .filter(Boolean)
-        .map(email => ({
-            emailAddress: email
-        }));
-}
-
-async function recuperarEmailGerador() {
-    const item = Office.context.mailbox.item;
-
-    if (!item || !item.body) {
-        atualizarStatus("Não foi possível acessar o corpo da mensagem.");
-        return;
-    }
-
-    const botao = document.getElementById("btnRecuperar");
-
-    try {
-        if (botao) botao.disabled = true;
-        atualizarStatus("Procurando o identificador temporário na mensagem...");
-
-        const corpoAtual = await obterCampoAsync((callback) =>
-            item.body.getAsync(
-                Office.CoercionType.Text,
-                callback
-            )
-        );
-
-        const correspondencia = String(corpoAtual || "")
-            .match(MARCADOR_PACOTE_REGEX);
-
-        if (!correspondencia) {
-            throw new Error(
-                "Identificador temporário não encontrado. " +
-                "Prepare o e-mail no Gerador antes de abrir este suplemento."
-            );
+    <style>
+        body {
+            margin: 0;
+            padding: 24px;
+            font-family: Arial, sans-serif;
+            background: #171717;
+            color: #ffffff;
         }
 
-        const token = correspondencia[1].toLowerCase();
-
-        atualizarStatus("Recuperando o pacote temporário...");
-
-        const resposta = await fetch(
-            `${WORKER_BASE_URL}/api/email-packages/consume/${token}`,
-            {
-                method: "GET",
-                cache: "no-store",
-                headers: {
-                    "Accept": "application/json"
-                }
-            }
-        );
-
-        const resultado = await resposta.json();
-
-        if (!resposta.ok || !resultado.success || !resultado.data) {
-            if (resposta.status === 410) {
-                throw new Error(
-                    "Este pacote expirou ou já foi utilizado. " +
-                    "Prepare o e-mail novamente no Gerador."
-                );
-            }
-
-            throw new Error(
-                resultado.error ||
-                `Falha ao recuperar o pacote (HTTP ${resposta.status}).`
-            );
+        .container {
+            max-width: 420px;
+            margin: auto;
         }
 
-        const pacote = resultado.data;
-
-        if (
-            typeof pacote.assunto !== "string" ||
-            typeof pacote.html !== "string" ||
-            !pacote.html.trim() ||
-            typeof pacote.para !== "string" ||
-            !pacote.para.trim()
-        ) {
-            throw new Error("O pacote recuperado está incompleto.");
+        .header {
+            border-bottom: 3px solid #4D611A;
+            padding-bottom: 14px;
+            margin-bottom: 22px;
         }
 
-        const destinatariosPara =
-            converterListaDestinatarios(pacote.para);
-
-        const destinatariosCc =
-            converterListaDestinatarios(pacote.cc);
-
-        if (destinatariosPara.length === 0) {
-            throw new Error("O pacote não contém destinatário em Para.");
+        h2 {
+            margin: 0;
+            color: #ffffff;
         }
 
-        atualizarStatus("Preenchendo destinatários...");
+        .subtitle {
+            color: #bdbdbd;
+            font-size: 13px;
+            margin-top: 8px;
+        }
 
-        await executarAsync((callback) =>
-            item.to.setAsync(destinatariosPara, callback)
-        );
+        button {
+            width: 100%;
+            padding: 13px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 5px;
+            background: #4D611A;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
 
-        await executarAsync((callback) =>
-            item.cc.setAsync(destinatariosCc, callback)
-        );
+        button:hover:not(:disabled) {
+            background: #627b21;
+        }
 
-        atualizarStatus("Preenchendo assunto e template oficial...");
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
 
-        await executarAsync((callback) =>
-            item.subject.setAsync(pacote.assunto, callback)
-        );
+        #status {
+            margin-top: 18px;
+            padding: 12px;
+            border-radius: 5px;
+            background: #252525;
+            color: #d5d5d5;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
 
-        await executarAsync((callback) =>
-            item.body.setAsync(
-                pacote.html,
-                {
-                    coercionType: Office.CoercionType.Html
-                },
-                callback
-            )
-        );
+<body>
+    <div class="container">
 
-        atualizarStatus(
-            "E-mail recuperado e preenchido. Confira destinatários, assunto e template antes de enviar."
-        );
+        <div class="header">
+            <h2>GERADOR PETROBRAS</h2>
 
-    } catch (erro) {
-        atualizarStatus("Não foi possível recuperar o e-mail: " + erro.message);
-    } finally {
-        if (botao) botao.disabled = false;
-    }
-}
-
-/* TESTE ORIGINAL DE PREENCHIMENTO */
-
-async function preencherEmailTeste() {
-    const item = Office.context.mailbox.item;
-
-    if (!item) {
-        atualizarStatus(
-            "Não foi possível acessar a mensagem atual."
-        );
-        return;
-    }
-
-    const assunto = "TESTE - GERADOR PETROBRAS";
-
-    const corpoHTML = `
-        <div style="font-family:Arial,sans-serif;color:#222;">
-            <table style="width:100%;border-collapse:collapse;">
-                <tr>
-                    <td colspan="2"
-                        style="background:#4D611A;color:white;
-                        padding:12px;text-align:center;
-                        font-weight:bold;">
-                        OCORRÊNCIA - TESTE
-                    </td>
-                </tr>
-
-                <tr>
-                    <td style="width:25%;padding:10px;
-                    border:1px solid #777;font-weight:bold;">
-                        IDENTIFICAÇÃO
-                    </td>
-
-                    <td style="padding:10px;border:1px solid #777;">
-                        TESTE 000001
-                    </td>
-                </tr>
-
-                <tr>
-                    <td style="padding:10px;border:1px solid #777;
-                    font-weight:bold;">
-                        OBSERVAÇÃO
-                    </td>
-
-                    <td style="padding:10px;border:1px solid #777;">
-                        Este é um teste de integração do
-                        Gerador Petrobras com o Outlook Web.
-                    </td>
-                </tr>
-            </table>
-
-            <p style="color:#c00000;font-style:italic;
-            text-align:center;">
-                MENSAGEM DE TESTE — NÃO ENVIAR
-            </p>
+            <div class="subtitle">
+                Integração com Outlook Web
+            </div>
         </div>
-    `;
 
-    try {
-        atualizarStatus("Preenchendo destinatários...");
+        <p>
+            Utilize os botões abaixo para testar a integração.
+        </p>
 
-        await executarAsync((callback) =>
-            item.to.setAsync(
-                [{
-                    displayName: "Destinatário de teste",
-                    emailAddress: "destinatario@exemplo.com"
-                }],
-                callback
-            )
-        );
+        <button id="btnRecuperar" disabled>
+            Recuperar e preencher e-mail
+        </button>
 
-        await executarAsync((callback) =>
-            item.cc.setAsync(
-                [{
-                    displayName: "Cópia de teste",
-                    emailAddress: "copia@exemplo.com"
-                }],
-                callback
-            )
-        );
+        <button id="btnPreencher" disabled>
+            Preencher e-mail de teste
+        </button>
 
-        atualizarStatus("Preenchendo assunto e corpo...");
+        <button id="btnTestarClipboard" disabled>
+            Testar leitura do clipboard
+        </button>
 
-        await executarAsync((callback) =>
-            item.subject.setAsync(
-                assunto,
-                callback
-            )
-        );
+        <div id="status">
+            Carregando suplemento...
+        </div>
 
-        await executarAsync((callback) =>
-            item.body.setAsync(
-                corpoHTML,
-                {
-                    coercionType: Office.CoercionType.Html
-                },
-                callback
-            )
-        );
+    </div>
 
-        atualizarStatus(
-            "Teste concluído! Confira os campos no Outlook. Não envie."
-        );
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <script src="./taskpane.js?v=4"></script>
 
-    } catch (erro) {
-        atualizarStatus("Erro: " + erro.message);
-    }
-}
-
-/* TESTE DE LEITURA DO CLIPBOARD */
-
-async function testarLeituraClipboard() {
-    const marcadorEsperado =
-        "GERADOR_PETROBRAS_TESTE_001";
-
-    try {
-        atualizarStatus("Solicitando leitura do clipboard...");
-
-        if (
-            !navigator.clipboard ||
-            typeof navigator.clipboard.readText !== "function"
-        ) {
-            throw new Error(
-                "A leitura do clipboard não está disponível neste navegador."
-            );
-        }
-
-        const conteudo =
-            await navigator.clipboard.readText();
-
-        if (conteudo.trim() === marcadorEsperado) {
-            atualizarStatus(
-                "SUCESSO! O suplemento conseguiu ler o clipboard."
-            );
-        } else {
-            atualizarStatus(
-                "Clipboard acessado, mas o conteúdo não corresponde " +
-                "ao marcador esperado. Confira o texto copiado."
-            );
-        }
-
-    } catch (erro) {
-        atualizarStatus(
-            "Falha na leitura do clipboard: " + erro.message
-        );
-    }
-}
-
-/* INICIALIZAÇÃO DO OUTLOOK */
-
-Office.onReady((informacoes) => {
-
-    const botaoRecuperar =
-        document.getElementById("btnRecuperar");
-
-    const botaoPreencher =
-        document.getElementById("btnPreencher");
-
-    const botaoClipboard =
-        document.getElementById("btnTestarClipboard");
-
-    if (botaoRecuperar) {
-        botaoRecuperar.addEventListener(
-            "click",
-            recuperarEmailGerador
-        );
-    }
-
-    if (botaoPreencher) {
-        botaoPreencher.addEventListener(
-            "click",
-            preencherEmailTeste
-        );
-    }
-
-    if (botaoClipboard) {
-        botaoClipboard.addEventListener(
-            "click",
-            testarLeituraClipboard
-        );
-    }
-
-    if (informacoes.host === Office.HostType.Outlook) {
-
-        if (botaoRecuperar) {
-            botaoRecuperar.disabled = false;
-        }
-
-        if (botaoPreencher) {
-            botaoPreencher.disabled = false;
-        }
-
-        if (botaoClipboard) {
-            botaoClipboard.disabled = false;
-        }
-
-        atualizarStatus(
-            "Complemento conectado ao Outlook. Botões habilitados."
-        );
-
-    } else {
-        atualizarStatus(
-            "O suplemento carregou, mas o Outlook não foi identificado."
-        );
-    }
-});
+</body>
+</html>
